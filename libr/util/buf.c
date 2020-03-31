@@ -42,6 +42,9 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
+	if (b->whole_buf) {
+		R_FREE (b->whole_buf);
+	}
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
@@ -64,6 +67,12 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 	// bsz = 4096; // FAKE MINIMUM SIZE TO READ THE BIN HEADER
 	if (bsz == UT64_MAX) {
 		return NULL;
+	}
+	if (b->whole_buf) {
+		if (sz) {
+			*sz = bsz;
+		}
+		return b->whole_buf;
 	}
 	free (b->whole_buf);
 	b->whole_buf = R_NEWS (ut8, bsz);

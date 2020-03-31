@@ -1489,12 +1489,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	if (!superClass) {
 		return;
 	}
-	class_name = strdup (class_name);
 	r_str_replace_char (class_name, ';', 0);
-
-	if (!class_name || !*class_name) {
-		return;
-	}
 	RBinClass *cls = R_NEW0 (RBinClass);
 	if (!cls) {
 		free (class_name);
@@ -1504,7 +1499,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->index = class_index;
 	cls->addr = dex->header.class_offset + class_index * DEX_CLASS_SIZE;
 	cls->methods = r_list_new ();
-	cls->super = strdup (superClass);
+	cls->super = superClass;
 	if (!cls->methods) {
 		free (cls);
 		free (class_name);
@@ -1618,7 +1613,6 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 			return;
 		}
 		c->class_data->virtual_methods_size = eof;
-
 		if (dexdump) {
 			rbin->cb_printf ("  Static fields     -\n");
 		}
