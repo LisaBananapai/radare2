@@ -68,18 +68,13 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 	if (bsz == UT64_MAX) {
 		return NULL;
 	}
-	if (b->whole_buf) {
-		if (sz) {
-			*sz = bsz;
-		}
-		return b->whole_buf;
-	}
 	free (b->whole_buf);
 	b->whole_buf = R_NEWS (ut8, bsz);
 	if (!b->whole_buf) {
 		return NULL;
 	}
 	r_buf_read_at (b, 0, b->whole_buf, bsz);
+	b->whole_bufsz = bsz;
 	if (sz) {
 		*sz = bsz;
 	}
@@ -197,6 +192,17 @@ R_API RBuffer *r_buf_new(void) {
 	u.data = NULL;
 	u.length = 0;
 	return new_buffer (R_BUFFER_BYTES, &u);
+}
+
+R_API const ut8 *r_buf_data_cached(RBuffer *b, ut64 *size) {
+	r_return_val_if_fail (b, NULL);
+	if (b->whole_buf) {
+		if (size) {
+			*size = b->whole_bufsz;
+		}
+		return b->whole_buf;
+	}
+	return r_buf_data (b, size);
 }
 
 R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size) {

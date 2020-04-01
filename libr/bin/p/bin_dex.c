@@ -854,7 +854,7 @@ static RBinInfo *info(RBinFile *bf) {
 	{
 		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
 		ut64 tmpsz;
-		const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
+		const ut8 *tmp = r_buf_data_cached (bf->buf, &tmpsz);
 		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
 		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
@@ -1085,7 +1085,7 @@ static ut64 dex_get_type_offset(RBinFile *bf, int type_idx) {
 	return bin->header.types_offset + type_idx * 0x04; //&bin->types[type_idx];
 }
 
-static const char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
+static char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
 	r_return_val_if_fail (bin && bin->types && c, NULL);
 
 	int cid = c->super_class;
@@ -1485,7 +1485,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	if (!class_name || !*class_name) {
 		return;
 	}
-	const char *superClass = dex_class_super_name (dex, c);
+	char *superClass = dex_class_super_name (dex, c);
 	if (!superClass) {
 		return;
 	}
@@ -1519,7 +1519,9 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", class_name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
 			createAccessFlagStr (c->access_flags, kAccessForClass));
-		rbin->cb_printf ("  Superclass        : '%s'\n", dex_class_super_name (dex, c));
+		char *sn = dex_class_super_name (dex, c);
+		rbin->cb_printf ("  Superclass        : '%s'\n", sn);
+		free (sn);
 		rbin->cb_printf ("  Interfaces        -\n");
 	}
 
@@ -1566,7 +1568,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		}
 
 		ut64 bufbufsz;
-		const ut8 *bufbuf = r_buf_data (bf->buf, &bufbufsz);
+		const ut8 *bufbuf = r_buf_data_cached (bf->buf, &bufbufsz);
 		p = bufbuf + c->class_data_offset;
 		// XXX may overflow
 		if (bufbufsz < c->class_data_offset) {
